@@ -1,0 +1,7 @@
+#!/bin/bash
+cmd="python /root/N.py "
+for var in "$@"
+do
+    cmd="${cmd} $var"
+done
+eval $cmd
