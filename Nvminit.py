@@ -277,7 +277,6 @@ def getactivevms(hypers):
     activevms = {}
     c = 0
     for key in vms.keys():
-        print(vms[key])
         if vms[key] != [] and vms[key] != "":
             activevms[key] = vms[key]
             c += 1
