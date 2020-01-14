@@ -262,12 +262,18 @@ def getfreecpus(hypers):
     salt_cmd = ['salt', hypers, 'virt.freecpu']
     out = subprocess.check_output(salt_cmd)
     cpus = yaml.load(out, Loader=yaml.FullLoader)
+    for key in cpus.keys():
+        if type(cpus[key]) == str:
+            del cpus[key]
     return cpus
 
 def getfreemems(hypers):
     salt_cmd = ['salt', hypers, 'virt.freemem']
     out = subprocess.check_output(salt_cmd)
     fms = yaml.load(out, Loader=yaml.FullLoader)
+    for key in fms.keys():
+        if type(fms[key]) == str:
+            del fms[key]
     return fms
 
 def getactivevms(hypers):
@@ -277,7 +283,7 @@ def getactivevms(hypers):
     activevms = {}
     c = 0
     for key in vms.keys():
-        if vms[key] != [] and vms[key] != "":
+        if vms[key] != [] and type(vms[key]) != str:
             activevms[key] = vms[key]
             c += 1
     if c <= 0:

@@ -1,5 +1,5 @@
 #!/bin/bash
-cmd="python /root/N.py "
+cmd="python /n/N.py "
 for var in "$@"
 do
     cmd="${cmd} $var"

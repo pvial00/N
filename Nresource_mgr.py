@@ -88,7 +88,7 @@ def select_avail_hyper(hypers, cpu, mem, mode, vols, storage=None):
                 #else:
                 #    last = [key, h[key][0], h[key][1]]
         if last[0] == None:
-            raise ValueError('Hyper cannot be selected')
+            raise ValueError('Hyper cannot be selected.  Possible out of capacity.')
         return last[0]
 
 def select_avail_storage(hyper, vols):
