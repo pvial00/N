@@ -62,31 +62,34 @@ if cmd == "vmcreate":
             sys.exit(3)
         if hypers == None:
             hypers = select_avail_hyper(hyper_prefix, int(cpus), int(mem), hyper_select, remote_storage_vols)
-        vmdir= select_avail_storage(hypers, remote_storage_vols)
+        if storage_default == "remote":
+            vmdir= select_avail_storage(hypers, remote_storage_vols)
+        elif storage_default == "local":
+            vmdir= select_avail_storage(hypers, local_storage_vols)
 
         if ostype == 0:
-            vminit_debian(workdir, builddir, vmdir, name, cpus, mem, rootparts[ostype], xmltemplates[ostype], vmimages[ostype], mac_prefix, vmcfgdir)
+            vminit_debian(workdir, builddir, vmdir, name, cpus, mem, rootparts[ostype], xmltemplates[ostype], vmimages[ostype], mac_prefix, vmcfgdir, storage_default)
             vmstart(hypers, vmcfgdir, name)
         elif ostype == 1:
-            vminit_freebsd(workdir, builddir, vmdir, name, cpus, mem, rootparts[ostype], xmltemplates[ostype], vmimages[ostype], mac_prefix, vmcfgdir)
+            vminit_freebsd(workdir, builddir, vmdir, name, cpus, mem, rootparts[ostype], xmltemplates[ostype], vmimages[ostype], mac_prefix, vmcfgdir, storage_default)
             vmstart(hypers, vmcfgdir, name)
         elif ostype == 2:
-            vminit_solaris(workdir, builddir, vmdir, name, cpus, mem, rootparts[ostype], xmltemplates[ostype], vmimages[ostype], mac_prefix, vmcfgdir)
+            vminit_solaris(workdir, builddir, vmdir, name, cpus, mem, rootparts[ostype], xmltemplates[ostype], vmimages[ostype], mac_prefix, vmcfgdir, storage_default)
             vmstart(hypers, vmcfgdir, name)
         elif ostype == 3:
-            vminit_openbsd(workdir, builddir, vmdir, name, cpus, mem, rootparts[ostype], xmltemplates[ostype], vmimages[ostype], mac_prefix, vmcfgdir)
+            vminit_openbsd(workdir, builddir, vmdir, name, cpus, mem, rootparts[ostype], xmltemplates[ostype], vmimages[ostype], mac_prefix, vmcfgdir, storage_default)
             vmstart(hypers, vmcfgdir, name)
         elif ostype == 4:
-            vminit_netbsd(workdir, builddir, vmdir, name, cpus, mem, rootparts[ostype], xmltemplates[ostype], vmimages[ostype], mac_prefix, vmcfgdir)
+            vminit_netbsd(workdir, builddir, vmdir, name, cpus, mem, rootparts[ostype], xmltemplates[ostype], vmimages[ostype], mac_prefix, vmcfgdir, storage_default)
             vmstart(hypers, vmcfgdir, name)
         elif ostype == 5:
-            vminit_minix(workdir, builddir, vmdir, name, cpus, mem, rootparts[ostype], xmltemplates[ostype], vmimages[ostype], mac_prefix, vmcfgdir)
+            vminit_minix(workdir, builddir, vmdir, name, cpus, mem, rootparts[ostype], xmltemplates[ostype], vmimages[ostype], mac_prefix, vmcfgdir, storage_default)
             vmstart(hypers, vmcfgdir, name)
         elif ostype == 6:
-            vminit_windows(workdir, builddir, vmdir, name, cpus, mem, rootparts[ostype], xmltemplates[ostype], vmimages[ostype], mac_prefix, vmcfgdir)
+            vminit_windows(workdir, builddir, vmdir, name, cpus, mem, rootparts[ostype], xmltemplates[ostype], vmimages[ostype], mac_prefix, vmcfgdir, storage_default)
             vmstart(hypers, vmcfgdir, name)
         elif ostype == 7:
-            vminit_macos(workdir, builddir, vmdir, name, cpus, mem, rootparts[ostype], xmltemplates[ostype], vmimages[ostype], mac_prefix, vmcfgdir)
+            vminit_macos(workdir, builddir, vmdir, name, cpus, mem, rootparts[ostype], xmltemplates[ostype], vmimages[ostype], mac_prefix, vmcfgdir, storage_default)
             vmstart(hypers, vmcfgdir, name)
 
 elif cmd == "vmdelete":
@@ -109,13 +112,13 @@ elif cmd == "vmdelete":
         q = raw_input(warn)
         if q == "y" or q == "Y":
             if isVMactive(hyper_prefix, name) == True:
-                vmshutdown(hyper_prefix, name)
+                vmhalt(hyper_prefix, name)
             vmdelete(hyper_prefix, vmcfgdir, name)
         elif q == "n" or q == "N":
             pass
     else:
         if isVMactive(hyper_prefix, name) == True:
-            vmshutdown(hyper_prefix, name)
+            vmhalt(hyper_prefix, name)
         vmdelete(hyper_prefix, vmcfgdir, name)
 elif cmd == "vmstart":
     hypers = None

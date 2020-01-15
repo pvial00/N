@@ -22,6 +22,7 @@ rootparts = {0:"/dev/loop0p1", 1:"/dev/loop0p1", 2:"/dev/loop0p1", 3:"/dev/loop0
 storagetypes = {0:10000, 1:10000, 2:20000, 3:10000, 4:10000, 5:10000, 6:20000, 7:30000}
 remote_storage_vols = ['/vm', '/cont1', '/cont2', '/cont3', '/cont4']
 local_storage_vols = ['/']
+storage_default = "remote"
 availability_groups = ['*']
 cli_mode = "developer"
 server_profiles="server.profile"

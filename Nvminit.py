@@ -175,7 +175,7 @@ def load_resources_from_xml(hypers, hostname, vmcfgdir):
     mem = int(cfg[hostname]['memory']) / 1024
     return cpu, mem, vmcfgdir
 
-def vminit_debian(workdir, builddir, vmdir, hostname, cpus, mem, part, template, img, mac_prefix, vmcfgdir):
+def vminit_debian(workdir, builddir, vmdir, hostname, cpus, mem, part, template, img, mac_prefix, vmcfgdir, storage_default):
     memkb = int(mem) * 1024
     imgpath = vmdir + "/" + hostname + ".img"
     cp_new_img_debian(vmdir, hostname, img)
@@ -188,7 +188,7 @@ def vminit_debian(workdir, builddir, vmdir, hostname, cpus, mem, part, template,
     mac_addr = gen_random_mac(mac_prefix)
     cfg_xml(vmcfgdir, template, hostname, mac_addr, imgpath, cpus, memkb)
 
-def vminit_freebsd(workdir, builddir, vmdir, hostname, cpus, mem, part, template, img, mac_prefix, vmcfgdir):
+def vminit_freebsd(workdir, builddir, vmdir, hostname, cpus, mem, part, template, img, mac_prefix, vmcfgdir, storage_default):
     memkb = int(mem) * 1024
     imgpath = vmdir + "/" + hostname + ".img"
     cp_new_img_freebsd(vmdir, hostname, img)
@@ -196,7 +196,7 @@ def vminit_freebsd(workdir, builddir, vmdir, hostname, cpus, mem, part, template
     mac_addr = gen_random_mac(mac_prefix)
     cfg_xml(vmcfgdir, template, hostname, mac_addr, imgpath, cpus, memkb)
 
-def vminit_solaris(workdir, builddir, vmdir, hostname, cpus, mem, part, template, img, mac_prefix, vmcfgdir):
+def vminit_solaris(workdir, builddir, vmdir, hostname, cpus, mem, part, template, img, mac_prefix, vmcfgdir, storage_default):
     memkb = int(mem) * 1024
     imgpath = vmdir + "/" + hostname + ".img"
     cp_new_img_solaris(vmdir, hostname, img)
@@ -204,7 +204,7 @@ def vminit_solaris(workdir, builddir, vmdir, hostname, cpus, mem, part, template
     mac_addr = gen_random_mac(mac_prefix)
     cfg_xml(vmcfgdir, template, hostname, mac_addr, imgpath, cpus, memkb)
 
-def vminit_openbsd(workdir, builddir, vmdir, hostname, cpus, mem, part, template, img, mac_prefix, vmcfgdir):
+def vminit_openbsd(workdir, builddir, vmdir, hostname, cpus, mem, part, template, img, mac_prefix, vmcfgdir, storage_default):
     memkb = int(mem) * 1024
     imgpath = vmdir + "/" + hostname + ".img"
     cp_new_img_openbsd(vmdir, hostname, img)
@@ -212,7 +212,7 @@ def vminit_openbsd(workdir, builddir, vmdir, hostname, cpus, mem, part, template
     mac_addr = gen_random_mac(mac_prefix)
     cfg_xml(vmcfgdir, template, hostname, mac_addr, imgpath, cpus, memkb)
 
-def vminit_netbsd(workdir, builddir, vmdir, hostname, cpus, mem, part, template, img, mac_prefix, vmcfgdir):
+def vminit_netbsd(workdir, builddir, vmdir, hostname, cpus, mem, part, template, img, mac_prefix, vmcfgdir, storage_default):
     memkb = int(mem) * 1024
     imgpath = vmdir + "/" + hostname + ".img"
     cp_new_img_netbsd(vmdir, hostname, img)
@@ -220,7 +220,7 @@ def vminit_netbsd(workdir, builddir, vmdir, hostname, cpus, mem, part, template,
     mac_addr = gen_random_mac(mac_prefix)
     cfg_xml(vmcfgdir, template, hostname, mac_addr, imgpath, cpus, memkb)
 
-def vminit_minix(workdir, builddir, vmdir, hostname, cpus, mem, part, template, img, mac_prefix, vmcfgidr):
+def vminit_minix(workdir, builddir, vmdir, hostname, cpus, mem, part, template, img, mac_prefix, vmcfgidr, storage_default):
     memkb = int(mem) * 1024
     imgpath = vmdir + "/" + hostname + ".img"
     cp_new_img_minix(vmdir, hostname, img)
@@ -228,7 +228,7 @@ def vminit_minix(workdir, builddir, vmdir, hostname, cpus, mem, part, template, 
     mac_addr = gen_random_mac(mac_prefix)
     cfg_xml(vmcfgdir, template, hostname, mac_addr, imgpath, cpus, memkb)
 
-def vminit_windows(workdir, builddir, vmdir, hostname, cpus, mem, part, template, img, mac_prefix, vmcfgdir):
+def vminit_windows(workdir, builddir, vmdir, hostname, cpus, mem, part, template, img, mac_prefix, vmcfgdir, storage_default):
     memkb = int(mem) * 1024
     imgpath = vmdir + "/" + hostname + ".img"
     cp_new_img_windows(vmdir, hostname, img)
@@ -236,7 +236,7 @@ def vminit_windows(workdir, builddir, vmdir, hostname, cpus, mem, part, template
     mac_addr = gen_random_mac(mac_prefix)
     cfg_xml(vmcfgdir, template, hostname, mac_addr, imgpath, cpus, memkb)
 
-def vminit_macos(workdir, builddir, vmdir, hostname, cpus, mem, part, template, img, mac_prefix, vmcfgdir):
+def vminit_macos(workdir, builddir, vmdir, hostname, cpus, mem, part, template, img, mac_prefix, vmcfgdir,storage_default):
     memkb = int(mem) * 1024
     imgpath = vmdir + "/" + hostname + ".img"
     cp_new_img_macos(vmdir, hostname, img)
