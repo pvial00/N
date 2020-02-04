@@ -1,14 +1,25 @@
 import os, subprocess
 import xml.etree.ElementTree as ET
 import yaml, requests, time
+from Nloop import *
 
 def mount_img_freebsd(imgpath, mntpath, device):
-    losetup_cmd = ['losetup', '-f', '-P', imgpath]
+    losetup_cmd = ['losetup', device, imgpath]
     out = subprocess.check_output(losetup_cmd)
     kpartx_cmd = ['kpartx', '-av', device]
     out = subprocess.check_output(kpartx_cmd)
     zpool_import_cmd = ['zpool', 'import', '-R', mntpath, '-d', '/dev/mapper']
     out = subprocess.check_output(zpool_import_cmd)
+    lines = out.split('\n')
+    for line in lines:
+        if "id:" in line:
+            _id = line.split(':')[1].strip()
+    zpool_import_cmd2 = ['zpool', 'import', '-f', '-d', '/dev/mapper', _id, 'zroot', '-R', mntpath]
+    out = subprocess.check_output(zpool_import_cmd2)
+    zfs_mount_cmd = ['zfs', 'mount', 'zroot/ROOT/default']
+    out = subprocess.check_output(zfs_mount_cmd)
+    tmpworkdir = mntpath + mntpath + "/default"
+    return tmpworkdir
 
 def umount_img_freebsd(device):
     umount_cmd = ['zpool', 'export', 'zroot']
@@ -19,12 +30,22 @@ def umount_img_freebsd(device):
     out = subprocess.check_output(losetup_cmd)
 
 def mount_img_solaris(imgpath, mntpath, device):
-    losetup_cmd = ['losetup', '-f', '-P', imgpath]
+    losetup_cmd = ['losetup', device, imgpath]
     out = subprocess.check_output(losetup_cmd)
     kpartx_cmd = ['kpartx', '-av', device]
     out = subprocess.check_output(kpartx_cmd)
-    zpool_import_cmd = ['zpool', 'import', '-R', mntpath, '-d', '/dev/mapper']
+    zpool_import_cmd = ['zpool', 'import', '-f', '-R', mntpath, '-d', '/dev/mapper']
     out = subprocess.check_output(zpool_import_cmd)
+    lines = out.split('\n')
+    for line in lines:
+        if "id:" in line:
+            _id = line.split(':')[1].strip()
+    zpool_import_cmd2 = ['zpool', 'import', '-f', '-d', '/dev/mapper', _id, 'zroot', '-R', mntpath]
+    out = subprocess.check_output(zpool_import_cmd2)
+    zfs_mount_cmd = ['zfs', 'mount', 'zroot/ROOT/default']
+    out = subprocess.check_output(zfs_mount_cmd)
+    tmpworkdir = mntpath + mntpath + "/default"
+    return tmpworkdir
 
 def umount_img_solaris(device):
     umount_cmd = ['zpool', 'export', 'zroot']
@@ -33,6 +54,7 @@ def umount_img_solaris(device):
     out = subprocess.check_output(kpartx_cmd)
     losetup_cmd = ['losetup', '-d', device]
     out = subprocess.check_output(losetup_cmd)
+
 
 def cp_new_img_macos(vmdir, hostname, img):
     newimg = vmdir + "/" + hostname + ".img"
@@ -74,24 +96,54 @@ def cp_new_img_debian(vmdir, hostname, img):
     cp_cmd = ['cp', img, newimg]
     out = subprocess.check_output(cp_cmd)
 
-def mountos_img_debian(imgpath, mntpath, device):
-    losetup_cmd = ['losetup', '-f', '-P', imgpath]
+def mountos_img_debian(imgpath, mntpath, device, part):
+    fulldevice = device + part
+    losetup_cmd = ['losetup', '-P', device, imgpath]
     out = subprocess.check_output(losetup_cmd)
-    mnt_cmd = ['mount', device, mntpath]
+    mnt_cmd = ['mount', fulldevice, mntpath]
     out = subprocess.check_output(mnt_cmd)
 
-def umountos_img_debian(mntpath):
+def umountos_img_debian(mntpath, device):
     umount_cmd = ['umount', mntpath]
     out = subprocess.check_output(umount_cmd)
-    losetup_cmd = ['losetup', '-d', '/dev/loop0']
+    losetup_cmd = ['losetup', '-d', device]
     out = subprocess.check_output(losetup_cmd)
 
-def mountos_img_freebsd(imgpath, mntpath, device):
-    losetup_cmd = ['losetup', '-f', '-P', imgpath]
-    out = subprocess.check_output(losetup_cmd)
-    #kpartx -av /dev/loop0
-    #zpool import -R /mnt/tmp -d /dev/mapper
-    #pool import -f -d /dev/mapper 4303737221853188784 zroot -R /mnt/tmp
+def gen_salt_keys(path, hostname):
+    gk = "--gen-keys=" + hostname
+    gkdir = "--gen-keys-dir=" + "/tmp"
+    salt_key_cmd = ['salt-key', gk, gkdir]
+    out = subprocess.check_output(salt_key_cmd)
+    src_pem_file = "/tmp/" + hostname + ".pem"
+    src_pub_file = "/tmp/" + hostname + ".pub"
+    minpath_pem = path + "/etc/salt/pki/minion/minion.pem"
+    minpath_pub = path + "/etc/salt/pki/minion/minion.pub"
+    srvpath_pub = "/etc/salt/pki/master/minions/" + hostname
+    cp_pem_cmd = ['cp', src_pem_file, minpath_pem]
+    cp_pub_cmd = ['cp', src_pub_file, minpath_pub]
+    cp_srv_pub_cmd = ['cp', src_pub_file, srvpath_pub]
+    out = subprocess.check_output(cp_pem_cmd)
+    out = subprocess.check_output(cp_pub_cmd)
+    out = subprocess.check_output(cp_srv_pub_cmd)
+    minid_path = path + "/etc/salt/minion_id"
+    f = open(minid_path, "w")
+    f.write(hostname)
+    f.close()
+
+def sethostname_freebsd(path, hostname):
+    hostnameline = "hostname=\"" + hostname + "\""
+    f = open(path, "r")
+    conf = f.read()
+    f.close()
+    lines = conf.split('\n')
+    lines.pop(0)
+    lines.insert(0, hostnameline)
+    _file = ""
+    for line in lines:
+        _file += line + "\n"
+    f = open(path, "w")
+    f.write(_file)
+    f.close()
 
 def sethostname_debian(path, hostname):
     path += "/etc/hostname"
@@ -127,6 +179,25 @@ def gensshkeys_debian(path):
     #out = subprocess.check_output(ssh_cmd)
     ssh_cmd = ['chroot', path, 'ssh-keygen', '-A']
     out = subprocess.check_output(ssh_cmd)
+
+def gensshkeys_freebsd(path):
+    ecdsa_path = path + "/etc/ssh/ssh_host_ecdsa_key"
+    ecdsa_path_pub = path + "/etc/ssh/ssh_host_ecdsa_key.pub"
+
+    rsa_path = path + "/etc/ssh/ssh_host_rsa_key"
+    rsa_path_pub = path + "/etc/ssh/ssh_host_rsa_key.pub"
+    
+    ed_path = path + "/etc/ssh/ssh_host_ed25519_key"
+    ed_path_pub = path + "/etc/ssh/ssh_host_ed25519_key.pub"
+    ssh_cmd = ['ssh-keygen', '-A', '-f', path]
+    out = subprocess.check_output(ssh_cmd)
+
+def preseed_salt_minion_keys_debian(hostname, mntpath):
+    genkeys = "--gen-keys=" + hostname
+    salt_cmd = ['salt-key', genkeys]
+    out = subprocess.check_output(salt_cmd)
+    cpcmd = "cp " + hostname + ".pub /etc/salt/pki/master/minions/" + hostname
+    os.system(cpcmd)
 
 def gen_random_mac(mac_prefix):
     m = mac_prefix
@@ -175,34 +246,64 @@ def load_resources_from_xml(hypers, hostname, vmcfgdir):
     mem = int(cfg[hostname]['memory']) / 1024
     return cpu, mem, vmcfgdir
 
-def vminit_debian(workdir, builddir, vmdir, hostname, cpus, mem, part, template, img, mac_prefix, vmcfgdir, storage_default):
+def vminit_krypto(workdir, builddir, vmdir, hostname, cpus, mem, part, template, img, mac_prefix, vmcfgdir, storage_default):
     memkb = int(mem) * 1024
+    device = select_avail_loop()
     imgpath = vmdir + "/" + hostname + ".img"
     cp_new_img_debian(vmdir, hostname, img)
     os.chmod(imgpath, 0777)
-    mountos_img_debian(imgpath, workdir, part)
+    mountos_img_debian(imgpath, workdir, device, part)
+    gen_salt_keys(workdir, hostname)
     sethostname_debian(workdir, hostname)
     sethostfile_debian(workdir, hostname)
     gensshkeys_debian(workdir)
-    umountos_img_debian(workdir)
+    umountos_img_debian(workdir, device)
+    mac_addr = gen_random_mac(mac_prefix)
+    cfg_xml(vmcfgdir, template, hostname, mac_addr, imgpath, cpus, memkb)
+
+def vminit_debian(workdir, builddir, vmdir, hostname, cpus, mem, part, template, img, mac_prefix, vmcfgdir, storage_default):
+    memkb = int(mem) * 1024
+    device = select_avail_loop()
+    imgpath = vmdir + "/" + hostname + ".img"
+    cp_new_img_debian(vmdir, hostname, img)
+    os.chmod(imgpath, 0777)
+    mountos_img_debian(imgpath, workdir, device, part)
+    sethostname_debian(workdir, hostname)
+    sethostfile_debian(workdir, hostname)
+    gensshkeys_debian(workdir)
+    umountos_img_debian(workdir, device)
     mac_addr = gen_random_mac(mac_prefix)
     cfg_xml(vmcfgdir, template, hostname, mac_addr, imgpath, cpus, memkb)
 
 def vminit_freebsd(workdir, builddir, vmdir, hostname, cpus, mem, part, template, img, mac_prefix, vmcfgdir, storage_default):
     memkb = int(mem) * 1024
-    imgpath = vmdir + "/" + hostname + ".img"
-    cp_new_img_freebsd(vmdir, hostname, img)
-    os.chmod(imgpath, 0777)
-    mac_addr = gen_random_mac(mac_prefix)
-    cfg_xml(vmcfgdir, template, hostname, mac_addr, imgpath, cpus, memkb)
+    device = select_avail_loop()
+    if device != None:
+        imgpath = vmdir + "/" + hostname + ".img"
+        cp_new_img_freebsd(vmdir, hostname, img)
+        os.chmod(imgpath, 0777)
+        tmpworkdir = mount_img_freebsd(imgpath, workdir, device)
+        sethostname_freebsd(tmpworkdir, hostname)
+        gensshkeys_freebsd(tmpworkdir)
+        umount_img_freebsd(device)
+        mac_addr = gen_random_mac(mac_prefix)
+        cfg_xml(vmcfgdir, template, hostname, mac_addr, imgpath, cpus, memkb)
+    else:
+        print("Unable to select loop device")
 
 def vminit_solaris(workdir, builddir, vmdir, hostname, cpus, mem, part, template, img, mac_prefix, vmcfgdir, storage_default):
     memkb = int(mem) * 1024
-    imgpath = vmdir + "/" + hostname + ".img"
-    cp_new_img_solaris(vmdir, hostname, img)
-    os.chmod(imgpath, 0777)
-    mac_addr = gen_random_mac(mac_prefix)
-    cfg_xml(vmcfgdir, template, hostname, mac_addr, imgpath, cpus, memkb)
+    device = select_avail_loop()
+    if device != None:
+        imgpath = vmdir + "/" + hostname + ".img"
+        cp_new_img_freebsd(vmdir, hostname, img)
+        os.chmod(imgpath, 0777)
+        tmpworkdir = mount_img_solaris(imgpath, workdir, device)
+        umount_img_solaris(device)
+        mac_addr = gen_random_mac(mac_prefix)
+        cfg_xml(vmcfgdir, template, hostname, mac_addr, imgpath, cpus, memkb)
+    else:
+        print("Unable to select loop device")
 
 def vminit_openbsd(workdir, builddir, vmdir, hostname, cpus, mem, part, template, img, mac_prefix, vmcfgdir, storage_default):
     memkb = int(mem) * 1024
@@ -393,15 +494,16 @@ def vmreset(hypers, hostname):
 
 def vmdelete(hypers, vmcfgdir, hostname):
     xmlpath = vmcfgdir + "/" + hostname + ".xml"
-    cfg = load_xml(hostname, xmlpath)
-    imgpath = cfg[hostname]['disk']
-    try:
-        os.remove(imgpath)
-        os.remove(xmlpath)
-    except OSError as oer:
-        print(oer)
-    else:
-        print(None)
+    if os.path.exists(xmlpath):
+        cfg = load_xml(hostname, xmlpath)
+        imgpath = cfg[hostname]['disk']
+        try:
+            os.remove(imgpath)
+            os.remove(xmlpath)
+        except OSError as oer:
+            print(oer)
+        else:
+            print(None)
 
 def vmlistfull(hypers, server):
     vms = getactivevms(hypers)
