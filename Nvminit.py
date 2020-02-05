@@ -131,6 +131,7 @@ def gen_salt_keys(path, hostname):
     f.close()
 
 def sethostname_freebsd(path, hostname):
+    path += "/etc/rc.conf"
     hostnameline = "hostname=\"" + hostname + "\""
     f = open(path, "r")
     conf = f.read()
