@@ -94,6 +94,9 @@ if cmd == "vmcreate":
         elif ostype == 8:
             vminit_krypto(workdir, builddir, vmdir, name, cpus, mem, rootparts[ostype], xmltemplates[ostype], vmimages[ostype], mac_prefix, vmcfgdir, storage_default)
             vmstart(hypers, vmcfgdir, name)
+        elif ostype == 9:
+            vminit_freebsd_salt(workdir, builddir, vmdir, name, cpus, mem, rootparts[ostype], xmltemplates[ostype], vmimages[ostype], mac_prefix, vmcfgdir, storage_default)
+            vmstart(hypers, vmcfgdir, name)
 
 elif cmd == "vmdelete":
     force = False

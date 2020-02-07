@@ -130,6 +130,27 @@ def gen_salt_keys(path, hostname):
     f.write(hostname)
     f.close()
 
+def gen_salt_keys_freebsd(path, hostname):
+    gk = "--gen-keys=" + hostname
+    gkdir = "--gen-keys-dir=" + "/tmp"
+    salt_key_cmd = ['salt-key', gk, gkdir]
+    out = subprocess.check_output(salt_key_cmd)
+    src_pem_file = "/tmp/" + hostname + ".pem"
+    src_pub_file = "/tmp/" + hostname + ".pub"
+    minpath_pem = path + "/usr/local/etc/salt/pki/minion/minion.pem"
+    minpath_pub = path + "/usr/local/etc/salt/pki/minion/minion.pub"
+    srvpath_pub = "/etc/salt/pki/master/minions/" + hostname
+    cp_pem_cmd = ['cp', src_pem_file, minpath_pem]
+    cp_pub_cmd = ['cp', src_pub_file, minpath_pub]
+    cp_srv_pub_cmd = ['cp', src_pub_file, srvpath_pub]
+    out = subprocess.check_output(cp_pem_cmd)
+    out = subprocess.check_output(cp_pub_cmd)
+    out = subprocess.check_output(cp_srv_pub_cmd)
+    minid_path = path + "/usr/local/etc/salt/minion_id"
+    f = open(minid_path, "w")
+    f.write(hostname)
+    f.close()
+
 def sethostname_freebsd(path, hostname):
     path += "/etc/rc.conf"
     hostnameline = "hostname=\"" + hostname + "\""
@@ -182,6 +203,9 @@ def gensshkeys_debian(path):
     out = subprocess.check_output(ssh_cmd)
 
 def gensshkeys_freebsd(path):
+    dsa_path = path + "/etc/ssh/ssh_host_dsa_key"
+    dsa_path_pub = path + "/etc/ssh/ssh_host_dsa_key.pub"
+
     ecdsa_path = path + "/etc/ssh/ssh_host_ecdsa_key"
     ecdsa_path_pub = path + "/etc/ssh/ssh_host_ecdsa_key.pub"
 
@@ -190,10 +214,24 @@ def gensshkeys_freebsd(path):
     
     ed_path = path + "/etc/ssh/ssh_host_ed25519_key"
     ed_path_pub = path + "/etc/ssh/ssh_host_ed25519_key.pub"
-    ssh_cmd = ['ssh-keygen', '-A', '-f', path]
-    out = subprocess.check_output(ssh_cmd)
+    path += "/etc/ssh"
+    dsa_cmd = "ssh-keygen -t dsa -f " + dsa_path + " -q -N \'\'"
+    os.system(dsa_cmd)
+    ecdsa_cmd = "ssh-keygen -t ecdsa -f " + ecdsa_path + " -q -N \'\'"
+    os.system(ecdsa_cmd)
+    rsa_cmd = "ssh-keygen -t rsa -f " + rsa_path + " -q -N \'\'"
+    os.system(rsa_cmd)
+    ed_cmd = "ssh-keygen -t rsa -f " + ed_path + " -q -N \'\'"
+    os.system(ed_cmd)
 
 def preseed_salt_minion_keys_debian(hostname, mntpath):
+    genkeys = "--gen-keys=" + hostname
+    salt_cmd = ['salt-key', genkeys]
+    out = subprocess.check_output(salt_cmd)
+    cpcmd = "cp " + hostname + ".pub /etc/salt/pki/master/minions/" + hostname
+    os.system(cpcmd)
+
+def preseed_salt_minion_keys_freebsd(hostname, mntpath):
     genkeys = "--gen-keys=" + hostname
     salt_cmd = ['salt-key', genkeys]
     out = subprocess.check_output(salt_cmd)
@@ -261,6 +299,23 @@ def vminit_krypto(workdir, builddir, vmdir, hostname, cpus, mem, part, template,
     umountos_img_debian(workdir, device)
     mac_addr = gen_random_mac(mac_prefix)
     cfg_xml(vmcfgdir, template, hostname, mac_addr, imgpath, cpus, memkb)
+
+def vminit_freebsd_salt(workdir, builddir, vmdir, hostname, cpus, mem, part, template, img, mac_prefix, vmcfgdir, storage_default):
+    memkb = int(mem) * 1024
+    device = select_avail_loop()
+    if device != None:
+        imgpath = vmdir + "/" + hostname + ".img"
+        cp_new_img_freebsd(vmdir, hostname, img)
+        os.chmod(imgpath, 0777)
+        tmpworkdir = mount_img_freebsd(imgpath, workdir, device)
+        gen_salt_keys_freebsd(tmpworkdir, hostname)
+        sethostname_freebsd(tmpworkdir, hostname)
+        gensshkeys_freebsd(tmpworkdir)
+        umount_img_freebsd(device)
+        mac_addr = gen_random_mac(mac_prefix)
+        cfg_xml(vmcfgdir, template, hostname, mac_addr, imgpath, cpus, memkb)
+    else:
+        print("Unable to select loop device")
 
 def vminit_debian(workdir, builddir, vmdir, hostname, cpus, mem, part, template, img, mac_prefix, vmcfgdir, storage_default):
     memkb = int(mem) * 1024
