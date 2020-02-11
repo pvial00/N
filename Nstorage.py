@@ -4,7 +4,7 @@ def getfreespace_remote_report_hyper(hypers, vols):
     salt_cmd = ['salt', '--out', 'yaml', hypers, 'disk.usage']
     out = subprocess.check_output(salt_cmd)
     report = {}
-    v = yaml.load(out, Loader=yaml.FullLoader)
+    v = yaml.load(out)
     for key in v.keys():
         for subkey in v[key].keys():
             if subkey in vols:
@@ -16,7 +16,7 @@ def getfreespace_remote_report(hypers, vols):
     salt_cmd = ['salt', '--out', 'yaml', hypers, 'disk.usage']
     out = subprocess.check_output(salt_cmd)
     report = {}
-    v = yaml.load(out, Loader=yaml.FullLoader)
+    v = yaml.load(out)
     for key in v.keys():
         if type(v[key]) != str:
             for subkey in v[key].keys():
@@ -28,7 +28,7 @@ def gettotalfreespace_remote(hypers, vols):
     salt_cmd = ['salt', '--out', 'yaml', hypers, 'disk.usage']
     out = subprocess.check_output(salt_cmd)
     report = {}
-    v = yaml.load(out, Loader=yaml.FullLoader)
+    v = yaml.load(out)
     report = {}
     for key in v.keys():
         total = 0
@@ -43,7 +43,7 @@ def getfreespace_local_report(hypers, vols):
     salt_cmd = ['salt', '--out', 'yaml', hypers, 'disk.usage']
     out = subprocess.check_output(salt_cmd)
     reports = {}
-    v = yaml.load(out, Loader=yaml.FullLoader)
+    v = yaml.load(out)
     for key in v.keys():
         if type(v[key]) != str:
             for subkey in v[key].keys():

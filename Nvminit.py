@@ -1,6 +1,7 @@
 import os, subprocess
 import xml.etree.ElementTree as ET
 import yaml, requests, time
+from binascii import hexlify
 from Nloop import *
 
 def mount_img_freebsd(imgpath, mntpath, device):
@@ -10,7 +11,7 @@ def mount_img_freebsd(imgpath, mntpath, device):
     out = subprocess.check_output(kpartx_cmd)
     zpool_import_cmd = ['zpool', 'import', '-R', mntpath, '-d', '/dev/mapper']
     out = subprocess.check_output(zpool_import_cmd)
-    lines = out.split('\n')
+    lines = out.decode('utf-8').split('\n')
     for line in lines:
         if "id:" in line:
             _id = line.split(':')[1].strip()
@@ -36,7 +37,7 @@ def mount_img_solaris(imgpath, mntpath, device):
     out = subprocess.check_output(kpartx_cmd)
     zpool_import_cmd = ['zpool', 'import', '-f', '-R', mntpath, '-d', '/dev/mapper']
     out = subprocess.check_output(zpool_import_cmd)
-    lines = out.split('\n')
+    lines = out.decode('utf-8').split('\n')
     for line in lines:
         if "id:" in line:
             _id = line.split(':')[1].strip()
@@ -242,7 +243,7 @@ def gen_random_mac(mac_prefix):
     m = mac_prefix
     tmp = os.urandom(5)
     for b in tmp:
-        m += str(b.encode('hex')) + ":"
+        m += str(hexlify(b.to_bytes(1, byteorder='big')).decode('utf-8')) + ":"
     return m[:len(m) - 1]
 
 def cfg_xml(path, filename, hostname, mac_addr, vmpath, cpus, mem):
@@ -290,7 +291,7 @@ def vminit_krypto(workdir, builddir, vmdir, hostname, cpus, mem, part, template,
     device = select_avail_loop()
     imgpath = vmdir + "/" + hostname + ".img"
     cp_new_img_debian(vmdir, hostname, img)
-    os.chmod(imgpath, 0777)
+    os.chmod(imgpath, 0o777)
     mountos_img_debian(imgpath, workdir, device, part)
     gen_salt_keys(workdir, hostname)
     sethostname_debian(workdir, hostname)
@@ -306,7 +307,7 @@ def vminit_freebsd_salt(workdir, builddir, vmdir, hostname, cpus, mem, part, tem
     if device != None:
         imgpath = vmdir + "/" + hostname + ".img"
         cp_new_img_freebsd(vmdir, hostname, img)
-        os.chmod(imgpath, 0777)
+        os.chmod(imgpath, 0o777)
         tmpworkdir = mount_img_freebsd(imgpath, workdir, device)
         gen_salt_keys_freebsd(tmpworkdir, hostname)
         sethostname_freebsd(tmpworkdir, hostname)
@@ -322,7 +323,7 @@ def vminit_debian(workdir, builddir, vmdir, hostname, cpus, mem, part, template,
     device = select_avail_loop()
     imgpath = vmdir + "/" + hostname + ".img"
     cp_new_img_debian(vmdir, hostname, img)
-    os.chmod(imgpath, 0777)
+    os.chmod(imgpath, 0o777)
     mountos_img_debian(imgpath, workdir, device, part)
     sethostname_debian(workdir, hostname)
     sethostfile_debian(workdir, hostname)
@@ -337,7 +338,7 @@ def vminit_freebsd(workdir, builddir, vmdir, hostname, cpus, mem, part, template
     if device != None:
         imgpath = vmdir + "/" + hostname + ".img"
         cp_new_img_freebsd(vmdir, hostname, img)
-        os.chmod(imgpath, 0777)
+        os.chmod(imgpath, 0o777)
         tmpworkdir = mount_img_freebsd(imgpath, workdir, device)
         sethostname_freebsd(tmpworkdir, hostname)
         gensshkeys_freebsd(tmpworkdir)
@@ -353,7 +354,7 @@ def vminit_solaris(workdir, builddir, vmdir, hostname, cpus, mem, part, template
     if device != None:
         imgpath = vmdir + "/" + hostname + ".img"
         cp_new_img_freebsd(vmdir, hostname, img)
-        os.chmod(imgpath, 0777)
+        os.chmod(imgpath, 0o777)
         tmpworkdir = mount_img_solaris(imgpath, workdir, device)
         umount_img_solaris(device)
         mac_addr = gen_random_mac(mac_prefix)
@@ -365,7 +366,7 @@ def vminit_openbsd(workdir, builddir, vmdir, hostname, cpus, mem, part, template
     memkb = int(mem) * 1024
     imgpath = vmdir + "/" + hostname + ".img"
     cp_new_img_openbsd(vmdir, hostname, img)
-    os.chmod(imgpath, 0777)
+    os.chmod(imgpath, 0o777)
     mac_addr = gen_random_mac(mac_prefix)
     cfg_xml(vmcfgdir, template, hostname, mac_addr, imgpath, cpus, memkb)
 
@@ -373,7 +374,7 @@ def vminit_netbsd(workdir, builddir, vmdir, hostname, cpus, mem, part, template,
     memkb = int(mem) * 1024
     imgpath = vmdir + "/" + hostname + ".img"
     cp_new_img_netbsd(vmdir, hostname, img)
-    os.chmod(imgpath, 0777)
+    os.chmod(imgpath, 0o777)
     mac_addr = gen_random_mac(mac_prefix)
     cfg_xml(vmcfgdir, template, hostname, mac_addr, imgpath, cpus, memkb)
 
@@ -381,7 +382,7 @@ def vminit_minix(workdir, builddir, vmdir, hostname, cpus, mem, part, template, 
     memkb = int(mem) * 1024
     imgpath = vmdir + "/" + hostname + ".img"
     cp_new_img_minix(vmdir, hostname, img)
-    os.chmod(imgpath, 0777)
+    os.chmod(imgpath, 0o777)
     mac_addr = gen_random_mac(mac_prefix)
     cfg_xml(vmcfgdir, template, hostname, mac_addr, imgpath, cpus, memkb)
 
@@ -389,7 +390,7 @@ def vminit_windows(workdir, builddir, vmdir, hostname, cpus, mem, part, template
     memkb = int(mem) * 1024
     imgpath = vmdir + "/" + hostname + ".img"
     cp_new_img_windows(vmdir, hostname, img)
-    os.chmod(imgpath, 0777)
+    os.chmod(imgpath, 0o777)
     mac_addr = gen_random_mac(mac_prefix)
     cfg_xml(vmcfgdir, template, hostname, mac_addr, imgpath, cpus, memkb)
 
@@ -397,7 +398,7 @@ def vminit_macos(workdir, builddir, vmdir, hostname, cpus, mem, part, template, 
     memkb = int(mem) * 1024
     imgpath = vmdir + "/" + hostname + ".img"
     cp_new_img_macos(vmdir, hostname, img)
-    os.chmod(imgpath, 0777)
+    os.chmod(imgpath, 0o777)
     mac_addr = gen_random_mac(mac_prefix)
     cfg_xml(vmcfgdir, template, hostname, mac_addr, imgpath, cpus, memkb)
 
@@ -418,7 +419,7 @@ def vmstartatrest(hypers, hostname, vols, mode=None):
 def getfreecpus(hypers):
     salt_cmd = ['salt', hypers, 'virt.freecpu']
     out = subprocess.check_output(salt_cmd)
-    cpus = yaml.load(out, Loader=yaml.FullLoader)
+    cpus = yaml.load(out)
     for key in cpus.keys():
         if type(cpus[key]) == str:
             del cpus[key]
@@ -427,7 +428,7 @@ def getfreecpus(hypers):
 def getfreemems(hypers):
     salt_cmd = ['salt', hypers, 'virt.freemem']
     out = subprocess.check_output(salt_cmd)
-    fms = yaml.load(out, Loader=yaml.FullLoader)
+    fms = yaml.load(out)
     for key in fms.keys():
         if type(fms[key]) == str:
             del fms[key]
@@ -436,7 +437,7 @@ def getfreemems(hypers):
 def getactivevms(hypers):
     salt_cmd = ['salt', '--out', 'yaml', hypers, 'virt.list_active_vms']
     out = subprocess.check_output(salt_cmd)
-    vms = yaml.load(out, Loader=yaml.FullLoader)
+    vms = yaml.load(out)
     activevms = {}
     c = 0
     for key in vms.keys():
@@ -460,7 +461,7 @@ def isVMactive(hypers, hostname):
 def getdiskspace(hypers, volume):
     salt_cmd = ['salt', '--out', 'yaml', hypers, 'disk.usage']
     out = subprocess.check_output(salt_cmd)
-    disks = yaml.load(out, Loader=yaml.FullLoader)
+    disks = yaml.load(out)
     ds = []
     for key in disks.keys():
         for subkey in disks[key].keys():
@@ -487,7 +488,7 @@ def getvmmac(hypers, hostname):
     if hyper != None:
         salt_cmd = ['salt', hyper, 'virt.get_macs', hostname]
         out = subprocess.check_output(salt_cmd)
-        macs = yaml.load(out, Loader=yaml.FullLoader)
+        macs = yaml.load(out)
         if len(macs) > 0:
             return macs[macs.keys()[0]][0]
         else:
@@ -507,7 +508,7 @@ def gethyperos(hypers, hostname):
     hyper = gethyperbyvmname(hypers, hostname)
     salt_cmd = ['salt', '--out', 'yaml', hyper, 'grains.items']
     out = subprocess.check_output(salt_cmd)
-    oses = yaml.load(out, Loader=yaml.FullLoader)
+    oses = yaml.load(out)
     for key in oses.keys():
         osfullname = oses[key]['osfullname']
     return osfullname
@@ -576,7 +577,7 @@ def vmlistfull(hypers, server):
 def hyperlist_list(hypers):
     salt_cmd = ['salt', '--out', 'yaml', hypers, 'test.ping']
     out = subprocess.check_output(salt_cmd)
-    hl = yaml.load(out, Loader=yaml.FullLoader)
+    hl = yaml.load(out)
     h = []
     for key in hl.keys():
         if hl[key] == True:
@@ -593,7 +594,7 @@ def vmsatrest(hypers, vmcfgdir):
     os.chdir(vmcfgdir)
     tmplist = []
     out = subprocess.check_output(listcmd)
-    for f in out.split():
+    for f in out.decode('utf-8').split():
         ext = f[len(f) - 4:]
         if ext == ".xml":
             name = f[:len(f) - 4]
@@ -640,7 +641,7 @@ def vmstatus(hypers, hostname):
     if hyper != None:
         salt_cmd = ['salt', '--out', 'yaml', hyper, 'virt.vm_info']
         out = subprocess.check_output(salt_cmd)
-        vms = yaml.load(out, Loader=yaml.FullLoader)
+        vms = yaml.load(out)
         for key in vms[hyper].keys():
             if key == hostname:
                 return vms[hyper][hostname]['state']
@@ -649,7 +650,7 @@ def vmstatus(hypers, hostname):
 def vmloadavg(hypers, hostname):
     salt_cmd = ['salt', '--out', 'yaml', hypers, 'status.loadavg']
     out = subprocess.check_output(salt_cmd)
-    loads = yaml.load(out, Loader=FullLoader)
+    loads = yaml.load(out)
     for key in loads.keys():
         print(key)
 

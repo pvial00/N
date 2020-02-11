@@ -30,7 +30,7 @@ def getfreeresourcesraw(hypers, vols):
 def gettotalnumcpus(hypers):
     salt_cmd = ['salt', hypers, 'status.nproc']
     out = subprocess.check_output(salt_cmd)
-    cpus = yaml.load(out, Loader=yaml.FullLoader)
+    cpus = yaml.load(out)
     c = 0
     for key in cpus.keys():
         if type(cpus[key]) == int:
@@ -40,7 +40,7 @@ def gettotalnumcpus(hypers):
 def gettotalmem(hypers):
     salt_cmd = ['salt', '--out', 'yaml', hypers, 'grains.item', 'mem_total']
     out = subprocess.check_output(salt_cmd)
-    mems = yaml.load(out, Loader=yaml.FullLoader)
+    mems = yaml.load(out)
     m = 0
     for key in mems.keys():
         try:
