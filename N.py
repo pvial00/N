@@ -115,7 +115,7 @@ elif cmd == "vmdelete":
             force = True
     if force == False:
         warn = "Warning: You are about to delete VM " + name + " Confirm Y/N"
-        q = raw_input(warn)
+        q = input(warn)
         if q == "y" or q == "Y":
             if isVMactive(hyper_prefix, name) == True:
                 vmhalt(hyper_prefix, name)
@@ -219,7 +219,7 @@ elif cmd == "help":
     cmdlist()
 elif cmd == "hyperreboot":
     warn = "Warning: You are about to delete VM " + name + " Confirm Y/N"
-    q = raw_input(warn)
+    q = input(warn)
     if q == "y" or q == "Y":
         hyperreboot(sys.argv[2])
 elif cmd == "freestorage":
