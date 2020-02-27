@@ -308,6 +308,9 @@ elif cmd == "vmmigrate":
         elif opt in ("-h", "--hyper"):
             dest_hyper = arg
     out = vmmigrate_shared_storage(hyper_prefix, sys.argv[2], sys.argv[3], vmcfgdir, 8)
+elif cmd == "loadavg":
+   loadavg = hyperloadavg(hyper_prefix)
+   print(loadavg)
 elif cmd == "loadcfg":
    load_type_cfg(server_profiles)
 elif cmd == "squaddeploy":
@@ -319,6 +322,19 @@ elif cmd == "squadcreate":
 elif cmd == "squaddelete":
     target_squad = sys.argv[2]
     vmdelete_squad(hyper_prefix, vmcfgdir, target_squad)
+elif cmd == "volattach":
+    volume_attach(hyper_prefix, sys.argv[2], sys.argv[3], sys.argv[4], remote_storage_vols)
+elif cmd == "voldetach":
+    result = volume_detach(hyper_prefix, sys.argv[2], sys.argv[3])
+    if result == "False":
+        print("Unable to find volume", sys.argv[2])
+    else:
+        print("Success")
+elif cmd == "voldelete":
+    volume_delete(hyper_prefix, sys.argv[2])
+elif cmd == "vollist":
+    vols = volumes_list(hyper_prefix, sys.argv[2])
+    print(vols)
 else:
     print("Command not found")
 

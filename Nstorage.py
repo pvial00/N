@@ -100,3 +100,53 @@ def volume_mount_nfs(hypers, server, vol, mnt):
     salt_cmd = ['salt', hypers, 'cmd.run', mount_cmd]
     out = subprocess.check_output(saltmkdir_cmd)
     out = subprocess.check_output(salt_cmd)
+
+def volume_attach(hypers, vmname, volname, size, vols):
+    from Nresource_mgr import select_avail_storage
+    from Nvminit import gethyperbyvmname
+    hyper = gethyperbyvmname(hypers, vmname)
+    vol = select_avail_storage(hypers, vols)
+    path = vol + "/" + volname + ".img"
+    qemu_img_cmd = ['qemu-img', 'create', path, size]
+    out = subprocess.check_output(qemu_img_cmd)
+    from os import chmod
+    chmod(path, 0o777)
+    virsh_cmd = "virsh attach-disk " + vmname + " " + path + " vdb --cache none"
+    salt_cmd = ['salt', hyper, 'cmd.run', virsh_cmd]
+    out = subprocess.check_output(salt_cmd)
+
+def volume_detach(hypers, vmname, volname):
+    from Nresource_mgr import select_avail_storage
+    from Nvminit import gethyperbyvmname
+    hyper = gethyperbyvmname(hypers, vmname)
+    vols = volumes_list(hyper, vmname)
+    for vol in vols:
+        if vol == volname:
+            virsh_cmd = "virsh detach-disk --domain " + vmname + " " + vols[vol]
+            salt_cmd = ['salt', hyper, 'cmd.run', virsh_cmd]
+            out = subprocess.check_output(salt_cmd)
+            return vols[vol]
+    return False
+
+def volume_delete(hypers, volpath):
+    from os import remove
+    remove(volpath)
+
+def volumes_list(hypers, vmname):
+    from Nvminit import gethyperbyvmname
+    hyper = gethyperbyvmname(hypers, vmname)
+    if hyper == None:
+        return None
+    virsh_cmd = "virsh domblklist " + vmname
+    salt_cmd = ['salt', '--out', 'yaml', hyper, 'cmd.run', virsh_cmd]
+    out = subprocess.check_output(salt_cmd)
+    vollist = yaml.load(out)
+    vols = {}
+    tmp = vollist[hyper].split('\n')
+    for x in range(2):
+        tmp.pop(0)
+    for element in tmp:
+        dev = element.split()[0]
+        path = element.split()[1]
+        vols[dev] = path
+    return vols

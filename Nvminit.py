@@ -551,6 +551,8 @@ def vmreset(hypers, hostname):
 
 def vmdelete(hypers, vmcfgdir, hostname):
     xmlpath = vmcfgdir + "/" + hostname + ".xml"
+    saltkeypath = "/etc/salt/pki/master/minions/" + hostname
+    os.remove(saltkeypath)
     if os.path.exists(xmlpath):
         cfg = load_xml(hostname, xmlpath)
         imgpath = cfg[hostname]['disk']
@@ -644,20 +646,17 @@ def vmstatus(hypers, hostname):
         vms = yaml.load(out)
         for key in vms[hyper].keys():
             if key == hostname:
-                return vms[hyper][hostname]['state']
+                return {hyper:vms[hyper][hostname]['state']}
     return None
 
-def vmloadavg(hypers, hostname):
-    salt_cmd = ['salt', '--out', 'yaml', hypers, 'status.loadavg']
-    out = subprocess.check_output(salt_cmd)
-    loads = yaml.load(out)
-    for key in loads.keys():
-        print(key)
-
 def vmmigrate_shared_storage(hypers, hostname, dest_hyper, vmcfgdir, timeout):
-    vmshutdown(hypers, hostname)
-    while isVMactive(hypers, hostname):
-        time.sleep(timeout)
-        print("lala")
-    #chk1, vol = getvmlocationatrest(hypers, hostname, vmcfgdir)
-    vmstart(dest_hyper, vmcfgdir, hostname)
+    hyper = gethyperbyvmname(hypers, hostname)
+    if hyper != dest_hyper:
+        vmshutdown(hypers, hostname)
+        while isVMactive(hypers, hostname):
+            time.sleep(timeout)
+            print("Waiting...")
+        #chk1, vol = getvmlocationatrest(hypers, hostname, vmcfgdir)
+        vmstart(dest_hyper, vmcfgdir, hostname)
+    else:
+        print("VM already running on host: ", dest_hyper)
