@@ -3,6 +3,9 @@ import subprocess, yaml
 def hyperreboot(hyper):
     salt_cmd = ['salt', '--out', 'yaml', hyper, 'cmd.run', 'reboot']
 
+def hyperhalt(hyper):
+    salt_cmd = ['salt', '--out', 'yaml', hyper, 'cmd.run', 'halt -p']
+
 def hyperloadavg(hypers):
     salt_cmd = ['salt', '--out', 'yaml', hypers, 'status.loadavg']
     out = subprocess.check_output(salt_cmd)

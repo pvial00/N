@@ -97,6 +97,18 @@ if cmd == "vmcreate":
         elif ostype == 9:
             vminit_freebsd_salt(workdir, builddir, vmdir, name, cpus, mem, rootparts[ostype], xmltemplates[ostype], vmimages[ostype], mac_prefix, vmcfgdir, storage_default)
             vmstart(hypers, vmcfgdir, name)
+        elif ostype == 10:
+            vminit_oracle_linux(workdir, builddir, vmdir, name, cpus, mem, rootparts[ostype], xmltemplates[ostype], vmimages[ostype], mac_prefix, vmcfgdir, storage_default)
+            vmstart(hypers, vmcfgdir, name)
+        elif ostype == 11:
+            vminit_oracle_linux_salt(workdir, builddir, vmdir, name, cpus, mem, rootparts[ostype], xmltemplates[ostype], vmimages[ostype], mac_prefix, vmcfgdir, storage_default)
+            vmstart(hypers, vmcfgdir, name)
+        elif ostype == 12:
+            vminit_oracle_linux_salt(workdir, builddir, vmdir, name, cpus, mem, rootparts[ostype], xmltemplates[ostype], vmimages[ostype], mac_prefix, vmcfgdir, storage_default)
+            vmstart(hypers, vmcfgdir, name)
+        elif ostype == 13:
+            vminit_oracle_linux_salt(workdir, builddir, vmdir, name, cpus, mem, rootparts[ostype], xmltemplates[ostype], vmimages[ostype], mac_prefix, vmcfgdir, storage_default)
+            vmstart(hypers, vmcfgdir, name)
 
 elif cmd == "vmdelete":
     force = False
@@ -191,14 +203,14 @@ elif cmd == "capacity":
     cpufree, memfree, totalcpus, totalmem, usedcpus, usedmem, availdisk, useddisk, totaldisk, freedisk = getcapacity(hyper_prefix, remote_storage_vols)
     print("Total CPUs: ", totalcpus)
     print("Available CPUs: ", usedcpus)
-    print("Available Memory: ", usedmem)
-    print("Total Memory: ", totalmem)
+    print("Available Memory in MB: ", usedmem)
+    print("Total Memory in MB: ", totalmem)
     print("% of CPUs free: ", cpufree)
     print("% of Memory free: ", memfree)
     print("% of Disk Space free: ", freedisk)
-    print("Total storage space ", totaldisk)
-    print("Available storage space: ", availdisk)
-    print("Used storage space: ", useddisk)
+    print("Total storage space in MB:", totaldisk)
+    print("Available storage space in MB: ", availdisk)
+    print("Used storage space in MB: ", useddisk)
 elif cmd == "vmmac":
     mac = getvmmac(hyper_prefix, sys.argv[2])
     print(mac)
@@ -218,10 +230,15 @@ elif cmd == "vmos":
 elif cmd == "help":
     cmdlist()
 elif cmd == "hyperreboot":
-    warn = "Warning: You are about to delete VM " + name + " Confirm Y/N"
+    warn = "Warning: You are about to reboot " + sys.argv[2] + " Confirm Y/N"
     q = input(warn)
     if q == "y" or q == "Y":
         hyperreboot(sys.argv[2])
+elif cmd == "hyperhalt":
+    warn = "Warning: You are about to halt " + sys.argv[2] + " Confirm Y/N"
+    q = input(warn)
+    if q == "y" or q == "Y":
+        hyperhalt(sys.argv[2])
 elif cmd == "freestorage":
     try:
         hyper_prefix = sys.argv[2]

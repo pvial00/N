@@ -54,12 +54,12 @@ def getcapacity(hypers, vols):
     availcpu, availmem, availdisk, useddisk, totaldisk = getfreeresourcesraw(hypers, vols)
     totalcpus = gettotalnumcpus(hypers)
     totalmem = gettotalmem(hypers)
-    cpufree = float(float(availcpu) / float(totalcpus)) * 100
-    memfree = float(float(availmem) / float(totalmem)) * 100
+    cpufree = round(float(float(availcpu) / float(totalcpus)) * 100, 2)
+    memfree = round(float(float(availmem) / float(totalmem)) * 100, 2)
     availdisk = availdisk / 1024
     useddisk = useddisk / 1024
     totaldisk = totaldisk / 1024
-    diskfree = float(float(availdisk) / float(totaldisk)) * 100
+    diskfree = round(float(float(availdisk) / float(totaldisk)) * 100, 2)
     return cpufree, memfree, totalcpus, totalmem, availcpu, availmem, availdisk,useddisk, totaldisk, diskfree
 
 def isCapacity(hypers, cpu, mem, disk, vols):

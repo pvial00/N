@@ -56,7 +56,6 @@ def umount_img_solaris(device):
     losetup_cmd = ['losetup', '-d', device]
     out = subprocess.check_output(losetup_cmd)
 
-
 def cp_new_img_macos(vmdir, hostname, img):
     newimg = vmdir + "/" + hostname + ".img"
     cp_cmd = ['cp', img, newimg]
@@ -107,6 +106,23 @@ def mountos_img_debian(imgpath, mntpath, device, part):
 def umountos_img_debian(mntpath, device):
     umount_cmd = ['umount', mntpath]
     out = subprocess.check_output(umount_cmd)
+    losetup_cmd = ['losetup', '-d', device]
+    out = subprocess.check_output(losetup_cmd)
+
+def mountos_img_oracle_linux(imgpath, mntpath, device, part):
+    fulldevice = device + part
+    losetup_cmd = ['losetup', '-P', device, imgpath]
+    out = subprocess.check_output(losetup_cmd)
+    vg_cmd = ['vgchange', '-ay']
+    out = subprocess.check_output(vg_cmd)
+    mnt_cmd = ['mount', '/dev/ol/root', mntpath]
+    out = subprocess.check_output(mnt_cmd)
+
+def umountos_img_oracle_linux(mntpath, device):
+    umount_cmd = ['umount', mntpath]
+    out = subprocess.check_output(umount_cmd)
+    vg_cmd = ['vgchange', '-a', 'n', 'ol']
+    out = subprocess.check_output(vg_cmd)
     losetup_cmd = ['losetup', '-d', device]
     out = subprocess.check_output(losetup_cmd)
 
@@ -178,6 +194,15 @@ def sethostfile_debian(path, hostname):
     path += "/etc/hosts"
     line1 = "127.0.0.1    localhost\n"
     line2 = "127.0.1.1    " + hostname
+    hostfile = line1 + line2
+    f = open(path, "w")
+    f.write(hostfile)
+    f.close()
+
+def sethostfile_oracle(path, hostname):
+    path += "/etc/hosts"
+    line1 = "127.0.0.1    localhost\n"
+    line2 = "127.0.0.1    " + hostname
     hostfile = line1 + line2
     f = open(path, "w")
     f.write(hostfile)
@@ -318,6 +343,33 @@ def vminit_freebsd_salt(workdir, builddir, vmdir, hostname, cpus, mem, part, tem
     else:
         print("Unable to select loop device")
 
+def vminit_oracle_linux_salt(workdir, builddir, vmdir, hostname, cpus, mem, part, template, img, mac_prefix, vmcfgdir, storage_default):
+    memkb = int(mem) * 1024
+    device = select_avail_loop()
+    imgpath = vmdir + "/" + hostname + ".img"
+    cp_new_img_debian(vmdir, hostname, img)
+    os.chmod(imgpath, 0o777)
+    mountos_img_oracle_linux(imgpath, workdir, device, part)
+    sethostname_debian(workdir, hostname)
+    sethostfile_oracle(workdir, hostname)
+    gen_salt_keys(workdir, hostname)
+    umountos_img_oracle_linux(workdir, device)
+    mac_addr = gen_random_mac(mac_prefix)
+    cfg_xml(vmcfgdir, template, hostname, mac_addr, imgpath, cpus, memkb)
+
+def vminit_oracle_linux(workdir, builddir, vmdir, hostname, cpus, mem, part, template, img, mac_prefix, vmcfgdir, storage_default):
+    memkb = int(mem) * 1024
+    device = select_avail_loop()
+    imgpath = vmdir + "/" + hostname + ".img"
+    cp_new_img_debian(vmdir, hostname, img)
+    os.chmod(imgpath, 0o777)
+    mountos_img_oracle_linux(imgpath, workdir, device, part)
+    sethostname_debian(workdir, hostname)
+    sethostfile_oracle(workdir, hostname)
+    umountos_img_oracle_linux(workdir, device)
+    mac_addr = gen_random_mac(mac_prefix)
+    cfg_xml(vmcfgdir, template, hostname, mac_addr, imgpath, cpus, memkb)
+
 def vminit_debian(workdir, builddir, vmdir, hostname, cpus, mem, part, template, img, mac_prefix, vmcfgdir, storage_default):
     memkb = int(mem) * 1024
     device = select_avail_loop()
@@ -355,8 +407,8 @@ def vminit_solaris(workdir, builddir, vmdir, hostname, cpus, mem, part, template
         imgpath = vmdir + "/" + hostname + ".img"
         cp_new_img_freebsd(vmdir, hostname, img)
         os.chmod(imgpath, 0o777)
-        tmpworkdir = mount_img_solaris(imgpath, workdir, device)
-        umount_img_solaris(device)
+        #tmpworkdir = mount_img_solaris(imgpath, workdir, device)
+        #umount_img_solaris(device)
         mac_addr = gen_random_mac(mac_prefix)
         cfg_xml(vmcfgdir, template, hostname, mac_addr, imgpath, cpus, memkb)
     else:
@@ -420,19 +472,21 @@ def getfreecpus(hypers):
     salt_cmd = ['salt', hypers, 'virt.freecpu']
     out = subprocess.check_output(salt_cmd)
     cpus = yaml.load(out)
+    freecpus = {}
     for key in cpus.keys():
-        if type(cpus[key]) == str:
-            del cpus[key]
-    return cpus
+        if type(cpus[key]) != str:
+            freecpus[key] = cpus[key]
+    return freecpus
 
 def getfreemems(hypers):
     salt_cmd = ['salt', hypers, 'virt.freemem']
     out = subprocess.check_output(salt_cmd)
     fms = yaml.load(out)
+    freemems = {}
     for key in fms.keys():
-        if type(fms[key]) == str:
-            del fms[key]
-    return fms
+        if type(fms[key]) != str:
+            freemems[key] = fms[key]
+    return freemems
 
 def getactivevms(hypers):
     salt_cmd = ['salt', '--out', 'yaml', hypers, 'virt.list_active_vms']
@@ -552,7 +606,8 @@ def vmreset(hypers, hostname):
 def vmdelete(hypers, vmcfgdir, hostname):
     xmlpath = vmcfgdir + "/" + hostname + ".xml"
     saltkeypath = "/etc/salt/pki/master/minions/" + hostname
-    os.remove(saltkeypath)
+    if os.path.exists(saltkeypath):
+        os.remove(saltkeypath)
     if os.path.exists(xmlpath):
         cfg = load_xml(hostname, xmlpath)
         imgpath = cfg[hostname]['disk']
@@ -627,7 +682,10 @@ def getvmlocationatrest(hypers, hostname, vols):
 def getvmxmlfile(hostname, mode="local", vmdir=None):
     if mode == "local":
         xmlfile = vmdir + "/" + hostname + ".xml"
-        tree = ET.parse(xmlfile)
+        try:
+            tree = ET.parse(xmlfile)
+        except FileNotFoundError as fer:
+            return None
         root = tree.getroot()
     return root
 
