@@ -109,6 +109,9 @@ if cmd == "vmcreate":
         elif ostype == 13:
             vminit_oracle_linux_salt(workdir, builddir, vmdir, name, cpus, mem, rootparts[ostype], xmltemplates[ostype], vmimages[ostype], mac_prefix, vmcfgdir, storage_default)
             vmstart(hypers, vmcfgdir, name)
+        elif ostype == 14:
+            vminit_solaris(workdir, builddir, vmdir, name, cpus, mem, rootparts[ostype], xmltemplates[ostype], vmimages[ostype], mac_prefix, vmcfgdir, storage_default)
+            vmstart(hypers, vmcfgdir, name)
 
 elif cmd == "vmdelete":
     force = False
@@ -156,9 +159,15 @@ elif cmd == "vmstart":
     cpus, mem, vol = load_resources_from_xml(hyper_prefix, name, vmcfgdir)
     if hypers == None:
         hyper = select_avail_hyper(hyper_prefix, int(cpus), int(mem), hyper_select, list(vol))
-        vmstart(hyper, vol, name)
+        if isVMactive(hyper_prefix, name) == False:
+            vmstart(hyper, vol, name)
+        else:
+            print("VM is already active")
     else:
-        vmstart(hypers, vol, name)
+        if isVMactive(hyper_prefix, name) == False:
+            vmstart(hypers, vol, name)
+        else:
+            print("VM is already active")
 elif cmd == "vmhalt":
     name = sys.argv[2]
     vmhalt(hyper_prefix, name)

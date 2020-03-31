@@ -8,3 +8,8 @@ def chg_cfg_xml_vmpath(vol, filename, hostname, vmpath):
     for devs in root.iter('disk'):
         devs[0].attrib['file'] = vmpath
     tree.write(outfilename)
+
+def add_disk(vmname, vmpath, path):
+    tree = ET.parse(filename)
+    root = tree.getroot()
+
